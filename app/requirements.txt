@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+aioredis
+elasticsearch[async]
+orjson

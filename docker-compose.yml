@@ -1,0 +1,89 @@
+version: '3.5'
+
+services:
+  movies_admin:
+    container_name: ymp_movies_admin
+    image: ymp_app
+    build:
+      context: ./movie_admin
+      dockerfile: ${PWD}/Dockerfile
+    environment:
+      DJANGO_SETTINGS_MODULE: "movie_admin.config.settings.dev"
+      MOVIES_SECRET_KEY: ${MOVIES_SECRET_KEY}
+      MOVIES_PG_PASSWORD: ${MOVIES_PG_PASSWORD}
+      MOVIES_MEDIA_ROOT: "/www/media"
+      MOVIES_STATIC_ROOT: "/www/static"
+    networks:
+      - ymp_network
+    volumes:
+      - ./movie_admin:/app
+      - ./media:/www/media
+      - ./static:/www/static
+    command: [
+        'gunicorn', 'movie_admin.config.wsgi', '--bind', '0.0.0.0:8000', '--workers', '4',
+        '--log-level', 'info', '--access-logfile', '-', '--log-file', '-'
+    ]
+    depends_on:
+      - postgres
+      - elastic
+
+  etl:
+    container_name: ymp_etl
+    image: ymp_app
+    environment:
+      DJANGO_SETTINGS_MODULE: "movie_admin.config.settings.dev"
+      MOVIES_SECRET_KEY: ${MOVIES_SECRET_KEY}
+      MOVIES_PG_PASSWORD: ${MOVIES_PG_PASSWORD}
+    networks:
+      - ymp_network
+    volumes:
+      - ./movie_admin:/app
+    command: ['./scripts/etl.sh']
+    depends_on:
+      - postgres
+      - elastic
+
+  postgres:
+    container_name: ymp_postgres
+    image: postgres:12-alpine
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - ymp_network
+    ports:
+      - 127.0.0.1:25501:5432
+
+  elastic:
+    container_name: ymp_elastic
+    image: elasticsearch:7.11.2
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    networks:
+      - ymp_network
+    ports:
+      - 127.0.0.1:9200:9200
+
+  nginx:
+    container_name: ymp_nginx
+    image: nginx:alpine
+    volumes:
+      - ./etc/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./etc/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./media:/www/media
+      - ./static:/www/static
+    networks:
+      - ymp_network
+    ports:
+      - 127.0.0.1:8000:80
+    depends_on:
+      - movies_admin
+
+volumes:
+  pg_data:
+
+networks:
+  ymp_network:
+    name: ymp_network
