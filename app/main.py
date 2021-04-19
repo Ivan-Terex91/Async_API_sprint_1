@@ -4,7 +4,7 @@ import uvicorn as uvicorn
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 
-from api.v1 import film
+from api.v1 import film, genre
 from core import config
 from core.logger import LOGGING
 
@@ -44,7 +44,7 @@ async def shutdown():
 # Подключаем роутер к серверу, указав префикс /v1/film
 # Теги указываем для удобства навигации по документации
 app.include_router(film.router, prefix="/v1/film", tags=["film"])
-
+app.include_router(genre.router, prefix="/api/v1/genre", tags=["genre"])
 
 if __name__ == "__main__":
     uvicorn.run(
