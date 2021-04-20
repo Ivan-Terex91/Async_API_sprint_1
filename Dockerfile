@@ -1,15 +1,11 @@
-FROM python:3.9-alpine
+FROM python:3.9-slim
 EXPOSE 8000
-WORKDIR /app
+WORKDIR /api/app
 
-RUN \
-    apk add --no-cache postgresql-libs && \
-    apk add --no-cache --virtual .build-deps gcc musl-dev postgresql-dev postgresql-libs
+RUN apt-get update && apt-get upgrade
 
-COPY requirements /app/requirements
+COPY . /api
 
-RUN \
-    pip install -r requirements/dev.txt --no-cache-dir && \
-    apk --purge del .build-deps
+RUN pip install -r /api/requirements/prod.txt --no-cache-dir
 
 CMD ["sleep", "infinity"]

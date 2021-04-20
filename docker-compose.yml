@@ -1,70 +1,70 @@
 version: '3.5'
 
 services:
-  movies_admin:
-    container_name: ymp_movies_admin
+  api:
+    container_name: ymp_api
     image: ymp_app
     build:
-      context: ./movie_admin
-      dockerfile: ${PWD}/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     environment:
-      DJANGO_SETTINGS_MODULE: "movie_admin.config.settings.dev"
-      MOVIES_SECRET_KEY: ${MOVIES_SECRET_KEY}
-      MOVIES_PG_PASSWORD: ${MOVIES_PG_PASSWORD}
-      MOVIES_MEDIA_ROOT: "/www/media"
-      MOVIES_STATIC_ROOT: "/www/static"
+      REDIS_DSN: ${REDIS_DSN}
+      ELASTIC_DSN: ${ELASTIC_DSN}
     networks:
       - ymp_network
     volumes:
-      - ./movie_admin:/app
-      - ./media:/www/media
-      - ./static:/www/static
+      - ./:/api
     command: [
-        'gunicorn', 'movie_admin.config.wsgi', '--bind', '0.0.0.0:8000', '--workers', '4',
-        '--log-level', 'info', '--access-logfile', '-', '--log-file', '-'
+        'uvicorn', 'main:app', '--host', '0.0.0.0', '--port', '8000', '--reload',
     ]
     depends_on:
-      - postgres
       - elastic
 
   etl:
     container_name: ymp_etl
     image: ymp_app
     environment:
-      DJANGO_SETTINGS_MODULE: "movie_admin.config.settings.dev"
-      MOVIES_SECRET_KEY: ${MOVIES_SECRET_KEY}
-      MOVIES_PG_PASSWORD: ${MOVIES_PG_PASSWORD}
+      REDIS_DSN: ${REDIS_DSN}
+      ELASTIC_DSN: ${ELASTIC_DSN}
     networks:
       - ymp_network
     volumes:
-      - ./movie_admin:/app
-    command: ['./scripts/etl.sh']
+      - ./:/api
+    command: [
+        'python', 'scripts/etl.py',
+    ]
     depends_on:
       - postgres
       - elastic
 
   postgres:
     container_name: ymp_postgres
-    image: postgres:12-alpine
+    image: postgres:13-alpine
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pg_data:/var/lib/postgresql/data
     networks:
       - ymp_network
-    ports:
-      - 127.0.0.1:25501:5432
+
+  redis:
+    container_name: ymp_redis
+    image: redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - ymp_network
 
   elastic:
     container_name: ymp_elastic
-    image: elasticsearch:7.11.2
+    image: elasticsearch:7.12.0
     environment:
       discovery.type: single-node
       ES_JAVA_OPTS: "-Xms512m -Xmx512m"
     networks:
       - ymp_network
-    ports:
-      - 127.0.0.1:9200:9200
+    volumes:
+      - elastic_data:/usr/share/elasticsearch/data
 
   nginx:
     container_name: ymp_nginx
@@ -72,17 +72,15 @@ services:
     volumes:
       - ./etc/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./etc/nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./media:/www/media
-      - ./static:/www/static
     networks:
       - ymp_network
-    ports:
-      - 127.0.0.1:8000:80
     depends_on:
-      - movies_admin
+      - api
 
 volumes:
   pg_data:
+  redis_data:
+  elastic_data:
 
 networks:
   ymp_network:

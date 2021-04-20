@@ -26,10 +26,8 @@ async def startup():
     Подключиться можем при работающем event-loop
     Поэтому логика подключения происходит в асинхронной функции
     """
-    redis.redis = await aioredis.create_redis_pool(
-        (config.REDIS_HOST, config.REDIS_PORT), minsize=10, maxsize=20
-    )
-    elastic.es = AsyncElasticsearch(hosts=[f"{config.ELASTIC_HOST}:{config.ELASTIC_PORT}"])
+    redis.redis = await aioredis.create_redis_pool(config.REDIS_DSN, minsize=10, maxsize=20)
+    elastic.es = AsyncElasticsearch(hosts=[config.ELASTIC_DSN])
 
 
 @app.on_event("shutdown")
