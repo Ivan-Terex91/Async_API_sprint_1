@@ -29,13 +29,13 @@ class GenreService:
             await self._put_genre_to_cache(genre)
         return genre
 
-    async def get_genres_list(self, page: int, size: int = 5):
+    async def get_genres_list(self, page: int, size: int = 5) -> List[Genre]:
         """Метод получения данных о списке жанров. Сначала из redis, затем из elastic"""
         genres = await self._genre_from_cache("genres")
         if not genres:
             genres = await self._get_genres_list_from_elastic(page, size)
             if not genres:
-                return None
+                return []
             for genre in genres:
                 await self._put_genre_to_cache(genre)
         return genres
