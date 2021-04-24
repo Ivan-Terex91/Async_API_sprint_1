@@ -43,7 +43,7 @@ class FilmListModel(BaseModel):
     imdb_rating: Optional[float]
 
 
-@router.get("/{film_id}", response_model=FilmDetailsModel)
+@router.get("/{film_id}/", response_model=FilmDetailsModel)
 async def film_details(
     film_id: str, film_service: FilmService = Depends(get_film_service)
 ) -> FilmDetailsModel:
@@ -92,7 +92,7 @@ async def film_search(
     page: Optional[int] = 1,
     size: Optional[int] = 50,
     query: Optional[str] = "",
-    person_service: FilmService = Depends(get_film_service),
+    film_service: FilmService = Depends(get_film_service),
 ) -> List[FilmListModel]:
-    films = await person_service.search_person_by_full_name(page=page, size=size, match_obj=query)
+    films = await film_service.search_films(page=page, size=size, match_obj=query)
     return [FilmListModel(**film["_source"]) for film in films]

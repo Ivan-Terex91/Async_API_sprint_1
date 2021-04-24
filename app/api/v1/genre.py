@@ -1,3 +1,5 @@
+import json
+from enum import Enum
 from http import HTTPStatus
 from typing import List, Optional
 
@@ -16,7 +18,16 @@ class Genre(BaseModel):
     name: str
 
 
-@router.get("/{genre_id}", response_model=Genre)
+class SortFields(Enum):
+    """Поля по которым можно делать сортировку"""
+
+    id__asc = "id"
+    id__desc = "-id"
+    name__asc = "name"
+    name__desc = "-name"
+
+
+@router.get("/{genre_id}/", response_model=Genre)
 async def genre_details(
     genre_id: str, genre_service: GenreService = Depends(get_genre_service)
 ) -> Genre:
@@ -29,8 +40,12 @@ async def genre_details(
 @router.get("/", response_model=List[Genre])
 async def genre_list(
     page: Optional[int] = 1,
-    size: Optional[int] = 5,
+    size: Optional[int] = 50,
+    sort: Optional[SortFields] = SortFields.name__asc,
     genre_service: GenreService = Depends(get_genre_service),
 ) -> List[Genre]:
-    genres = await genre_service.get_genres_list(page, size)
+    sort_value, sort_order = sort.name.split("__")
+    genres = await genre_service.get_genres_list(
+        page=page, size=size, sort_value=sort_value, sort_order=sort_order
+    )
     return [Genre(id=genre.id, name=genre.name) for genre in genres]

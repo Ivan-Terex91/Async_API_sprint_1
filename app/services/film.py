@@ -48,7 +48,7 @@ class FilmService:
             search_query["query"] = {
                 "nested": {
                     "path": "genres",
-                    "query": {"match": {"genres.id": str(filter_map["genre_id"])}},
+                    "query": {"term": {"genres.id": str(filter_map["genre_id"])}},
                 }
             }
 
@@ -61,7 +61,7 @@ class FilmService:
         )
         return [Film(**doc["_source"]) for doc in response["hits"]["hits"]]
 
-    async def search_films(self, page: int, size: int, match_obj: str):
+    async def search_films(self, page: int, size: int, match_obj: str) -> List[Dict]:
         """Метод поиска фильмов по названию"""
         query = await self.get_search_query(
             _source_param=("id", "title", "imdb_rating"), field="title", match_obj=match_obj

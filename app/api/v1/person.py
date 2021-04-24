@@ -36,7 +36,7 @@ class PersonFilm(BaseModel):
     roles: List[RoleType]
 
 
-@router.get("/{person_id}", response_model=Person)
+@router.get("/{person_id}/", response_model=Person)
 async def person_details(
     person_id: str, person_service: PersonService = Depends(get_person_service)
 ) -> Person:
@@ -51,10 +51,7 @@ async def person_film_list(
     person_id: str, person_service: PersonService = Depends(get_person_service)
 ) -> List[PersonFilm]:
     films = await person_service.get_person_film_list(person_id)
-    return [
-        PersonFilm(id=film.id, title=film.title, imdb_rating=film.imdb_rating, roles=film.roles)
-        for film in films
-    ]
+    return [PersonFilm(**film) for film in films]
 
 
 @router.get("/search/", response_model=List[Person])

@@ -3,5 +3,5 @@ import orjson
 loads = orjson.loads
 
 
-def dumps(v, *, default):
-    return orjson.dumps(v, default=default).decode()
+def dumps(v):
+    return orjson.dumps(v).decode()
