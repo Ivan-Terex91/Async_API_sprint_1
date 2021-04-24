@@ -85,3 +85,14 @@ async def film_list(
         sort_order=sort_order,
     )
     return films_list
+
+
+@router.get("/search/", response_model=List[FilmListModel])
+async def film_search(
+    page: Optional[int] = 1,
+    size: Optional[int] = 50,
+    query: Optional[str] = "",
+    person_service: FilmService = Depends(get_film_service),
+) -> List[FilmListModel]:
+    films = await person_service.search_person_by_full_name(page=page, size=size, match_obj=query)
+    return [FilmListModel(**film["_source"]) for film in films]

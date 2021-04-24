@@ -1,10 +1,11 @@
 from functools import lru_cache
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from aioredis import Redis
 from elasticsearch import AsyncElasticsearch, NotFoundError
 from fastapi import Depends
 
+from core import json
 from db.elastic import get_elastic
 from db.redis import get_redis
 from models.film import Film
@@ -59,6 +60,23 @@ class FilmService:
             body=search_query,
         )
         return [Film(**doc["_source"]) for doc in response["hits"]["hits"]]
+
+    async def search_films(self, page: int, size: int, match_obj: str):
+        """Метод поиска фильмов по названию"""
+        query = await self.get_search_query(
+            _source_param=("id", "title", "imdb_rating"), field="title", match_obj=match_obj
+        )
+        films = await self.elastic.search(
+            index="movies", body=json.dumps(query), from_=(page - 1) * size, size=size
+        )
+        films = films["hits"]["hits"]
+        return films
+
+    @staticmethod
+    async def get_search_query(field: str, match_obj: str, _source_param: Tuple = ()) -> Dict:
+        """Метод формирует поисковой запрос к elastic в зависимости от параметров."""
+        query = {"_source": _source_param, "query": {"match": {field: match_obj}}}
+        return query
 
 
 @lru_cache()

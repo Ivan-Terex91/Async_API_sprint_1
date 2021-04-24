@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from aioredis import Redis
 from elasticsearch import AsyncElasticsearch, NotFoundError
@@ -20,7 +20,7 @@ class PersonService:
         self.redis = redis
         self.elastic = elastic
 
-    async def get_by_id(self, person_id: str) -> Optional[Person]:
+    async def get_by_id(self, person_id: str) -> Optional[Tuple[Person, List[str], List[str]]]:
         """Метод получения данных о персоне. Сначала из redis, затем из elastic."""
         person = await self._person_from_cache(person_id)
         if not person:
@@ -34,7 +34,7 @@ class PersonService:
         for role, film in films.items():
             person_roles.append(role)
             film_ids.update({film_param["id"] for film_param in film})
-        return person, person_roles, list(film_ids)
+        return Person(**person), person_roles, list(film_ids)
 
     async def get_person_film_list(self, person_id: str) -> Optional[List[PersonFilm]]:
         """Метод получения списка фильмов в которых принимала участие персона."""
@@ -54,6 +54,20 @@ class PersonService:
                 else:
                     person_films[film_param["id"]]["roles"].append(role)
         return [film_param for film_param in person_films.values()]
+
+    async def search_person_by_full_name(
+        self, page: int, size: int, match_obj: str
+    ) -> Optional[List[Tuple[Person, List[str], List[str]]]]:
+        """Метод поиска персон по полному имени"""
+        query = await self.get_search_query(field="full_name", match_obj=match_obj)
+        persons = await self.elastic.search(
+            index="persons", body=json.dumps(query), from_=(page - 1) * size, size=size
+        )
+        full_persons_data = []
+        for person in persons:
+            person, person_roles, film_ids = self.get_by_id(person.id)
+            full_persons_data.append((Person(**person), person_roles, film_ids))
+        return full_persons_data
 
     async def _get_person_from_elastic(self, person_id: str) -> Optional[Person]:
         """Метод получения данных о персоне из elastic."""
@@ -96,6 +110,12 @@ class PersonService:
             "_source": _source_param,
             "query": {"nested": {"path": path, "query": {"term": term}}},
         }
+        return query
+
+    @staticmethod
+    async def get_search_query(field: str, match_obj: str, _source_param: Tuple = ()) -> Dict:
+        """Метод формирует поисковой запрос к elastic в зависимости от параметров."""
+        query = {"_source": _source_param, "query": {"match": {field: match_obj}}}
         return query
 
 

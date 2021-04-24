@@ -1,6 +1,6 @@
 from enum import Enum
 from http import HTTPStatus
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import UUID4, BaseModel
@@ -55,3 +55,22 @@ async def person_film_list(
         PersonFilm(id=film.id, title=film.title, imdb_rating=film.imdb_rating, roles=film.roles)
         for film in films
     ]
+
+
+@router.get("/search/", response_model=List[Person])
+async def person_search(
+    page: Optional[int] = 1,
+    size: Optional[int] = 50,
+    query: Optional[str] = "",
+    person_service: PersonService = Depends(get_person_service),
+) -> List[Person]:
+    persons_full_data = await person_service.search_person_by_full_name(
+        page=page, size=size, match_obj=query
+    )
+    persons = []
+    for person_full_data in persons_full_data:
+        person, person_roles, film_ids = person_full_data
+        persons.append(
+            Person(id=person.id, full_name=person.full_name, roles=person_roles, film_ids=film_ids)
+        )
+    return persons
