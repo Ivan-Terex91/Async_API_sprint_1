@@ -27,6 +27,9 @@
     2. elastic, postgres, redis
     3. nginx
 
+[https://github.com/smdnv/Async_API_sprint_1/issues/24](https://github.com/smdnv/Async_API_sprint_1/issues/24)
+1. Убрано кеширование в сервисах жанров и персонажей. Кеширование будет реализовано в отдельной задаче. Сейчас этот код только мешает.
+
 [PRACTIX-10 Расширить etl для жанров и персонажей](https://github.com/smdnv/Async_API_sprint_1/issues/10)
 В работе
 
