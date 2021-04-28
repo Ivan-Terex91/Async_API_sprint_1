@@ -1,0 +1,11 @@
+FROM python:3.9-slim
+WORKDIR /etl
+
+RUN apt-get update && apt-get --yes upgrade
+
+COPY ./requirements/etl.txt /etl/requirements.txt
+RUN pip install -r /etl/requirements.txt --no-cache-dir
+
+COPY ./etl /etl
+
+CMD ["python", "main.py"]

@@ -3,7 +3,7 @@ version: '3.5'
 services:
   api:
     container_name: ymp_api
-    image: ymp_app
+    image: ymp_api
     build:
       context: .
       dockerfile: Dockerfile
@@ -19,20 +19,21 @@ services:
     ]
     depends_on:
       - elastic
+      - redis
 
   etl:
     container_name: ymp_etl
-    image: ymp_app
+    image: ymp_etl
+    build:
+      context: .
+      dockerfile: ${PWD}/Dockerfile-etl
     environment:
-      REDIS_DSN: ${REDIS_DSN}
+      POSTGRES_DSN: ${POSTGRES_DSN}
       ELASTIC_DSN: ${ELASTIC_DSN}
     networks:
       - ymp_network
     volumes:
-      - ./:/api
-    command: [
-        'python', 'scripts/etl.py',
-    ]
+      - ./etl:/etl
     depends_on:
       - postgres
       - elastic
