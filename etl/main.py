@@ -13,14 +13,14 @@ from models import Filmwork
 class Settings(BaseSettings):
     elastic_dsn: AnyHttpUrl
     postgres_dsn: PostgresDsn
-    local_storage_path: str = "/var/lib/ymp/etl.json"
+    local_storage_path: str = "etl.json"
     chunk_size: int = 100
 
 
 def beat_coro(
-    get_last_timestamp: Callable[[], datetime],
-    set_last_timestamp: Callable[[datetime], None],
-    consumers_coro,
+        get_last_timestamp: Callable[[], datetime],
+        set_last_timestamp: Callable[[datetime], None],
+        consumers_coro,
 ):
     """
     Корутина для запуска процесса etl.
@@ -121,7 +121,8 @@ class FilmworkEtl(BaseEtl):
 
 
 def main():
-    settings = Settings()
+    settings = Settings(elastic_dsn="http://localhost:9200/",
+                        postgres_dsn="postgres://postgres:postgres@localhost:5432/movies")
 
     # Клиенты для хранилищ
     state_storage = State(JsonFileStorage(str(settings.local_storage_path)))
