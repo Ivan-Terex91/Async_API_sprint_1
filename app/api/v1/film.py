@@ -43,7 +43,7 @@ class FilmListModel(BaseModel):
     imdb_rating: Optional[float]
 
 
-@router.get("/{film_id}", response_model=FilmDetailsModel)
+@router.get("/{film_id}/", response_model=FilmDetailsModel)
 async def film_details(
     film_id: str, film_service: FilmService = Depends(get_film_service)
 ) -> FilmDetailsModel:
