@@ -2,6 +2,7 @@ import json
 from enum import Enum
 from http import HTTPStatus
 from typing import List, Optional
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import UUID4, BaseModel
@@ -27,9 +28,9 @@ class SortFields(Enum):
     name__desc = "-name"
 
 
-@router.get("/{genre_id}/", response_model=Genre)
+@router.get("/{genre_id:uuid}/", response_model=Genre)
 async def genre_details(
-    genre_id: str, genre_service: GenreService = Depends(get_genre_service)
+    genre_id: UUID, genre_service: GenreService = Depends(get_genre_service)
 ) -> Genre:
     genre = await genre_service.get_by_id(genre_id)
     if not genre:

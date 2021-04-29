@@ -1,6 +1,7 @@
 from enum import Enum
 from http import HTTPStatus
 from typing import List, Optional
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import UUID4, BaseModel
@@ -36,9 +37,9 @@ class PersonFilm(BaseModel):
     roles: List[RoleType]
 
 
-@router.get("/{person_id}/", response_model=Person)
+@router.get("/{person_id:uuid}/", response_model=Person)
 async def person_details(
-    person_id: str, person_service: PersonService = Depends(get_person_service)
+    person_id: UUID, person_service: PersonService = Depends(get_person_service)
 ) -> Person:
     person, person_roles, film_ids = await person_service.get_by_id(person_id)
     if not person:
@@ -46,9 +47,9 @@ async def person_details(
     return Person(id=person.id, full_name=person.full_name, roles=person_roles, film_ids=film_ids)
 
 
-@router.get("/{person_id}/film/", response_model=List[PersonFilm])
+@router.get("/{person_id:uuid}/film/", response_model=List[PersonFilm])
 async def person_film_list(
-    person_id: str, person_service: PersonService = Depends(get_person_service)
+    person_id: UUID, person_service: PersonService = Depends(get_person_service)
 ) -> List[PersonFilm]:
     films = await person_service.get_person_film_list(person_id)
     return [PersonFilm(**film) for film in films]

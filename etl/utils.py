@@ -1,7 +1,13 @@
+import json
 import logging
+import os
+import sys
+import time
 from functools import wraps
 from time import sleep
 from typing import Callable
+
+import requests
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("etl")
@@ -72,3 +78,17 @@ def backoff(
         return inner
 
     return func_wrapper
+
+
+def load_indexes(es_dsn: str):
+    """Функция для загрузки индексов в elastic"""
+    indexes = os.listdir("indexes")
+    time.sleep(10)  # Для того чтобы контейнер с elastic успел подняться
+    for index in indexes:
+        with open(f"indexes/{index}") as infile:
+            file = json.load(infile)
+            index_name = index.split(".")[0]
+            url = f"{es_dsn}{index_name}"
+            response = requests.head(url=url)
+            if response.status_code == 404:
+                requests.put(url=url, json=file)
