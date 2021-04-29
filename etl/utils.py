@@ -1,13 +1,12 @@
 import json
 import logging
 import os
-import sys
-import time
 from functools import wraps
 from time import sleep
 from typing import Callable
 
 import requests
+from requests.exceptions import ConnectionError, ConnectTimeout
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("etl")
@@ -82,13 +81,17 @@ def backoff(
 
 def load_indexes(es_dsn: str):
     """Функция для загрузки индексов в elastic"""
+
+    @backoff(lambda exc: isinstance(exc, (ConnectionError, ConnectTimeout)))
+    def create_if_not_exist(url, data):
+        response = requests.head(url=url)
+        if response.status_code == 404:
+            requests.put(url=url, json=data)
+
     indexes = os.listdir("indexes")
-    time.sleep(10)  # Для того чтобы контейнер с elastic успел подняться
     for index in indexes:
         with open(f"indexes/{index}") as infile:
-            file = json.load(infile)
+            data = json.load(infile)
             index_name = index.split(".")[0]
             url = f"{es_dsn}{index_name}"
-            response = requests.head(url=url)
-            if response.status_code == 404:
-                requests.put(url=url, json=file)
+            create_if_not_exist(url, data)
