@@ -1,14 +1,23 @@
 # Запуск проекта
 1. Конфигурация маппинга портов для локального запуска
-`cp docker-compose.override.yml{.example,}`
+```
+cp docker-compose.override.yml{.example,}
+```
 2. Переменные окружения для запуска
-`cp .env{.example,}`
+```
+cp .env{.example,}
+```
 3. Запуск контейнеров
-`docker-compose up -d`
+```
+docker-compose up -d
+```
 
 * В проекте находится тестовая бд, которая автоматически разворачивается в контейнере с postgres.
 * Etl создаст нужные индексы в elastic и скопирует данные, после запуска elastic контейнера.
-`docker-compose logs -f --tail 30 etl` для просмотра процесса синхронизации данных.
+```
+docker-compose logs -f --tail 30 etl
+``` 
+для просмотра процесса синхронизации данных.
 
 
 [PRACTIX-6 Добавить апи для жанров](https://github.com/smdnv/Async_API_sprint_1/issues/6)
