@@ -39,8 +39,8 @@ async def cache(request: Request, call_next):
     resp_body = [section async for section in response.__dict__["body_iterator"]]
     response.__setattr__("body_iterator", async_iterator_wrapper(resp_body))
     resp_body = resp_body[0]
-
-    await redis_cache.put_data_from_redis(key=key, value=json.loads(resp_body))
+    if key not in (b"/api/openapi", b"/api/openapi.json"):
+        await redis_cache.put_data_from_redis(key=key, value=json.loads(resp_body))
     return response
 
 
