@@ -5,7 +5,7 @@ from typing import Callable, List
 from pydantic import AnyHttpUrl, BaseSettings, PostgresDsn
 from repo import BaseRepository, FilmworkRepository, GenreRepository, PersonRepository
 from storage import ElasticWriter, JsonFileStorage, PGReader, State
-from utils import coroutine, get_logger, logger
+from utils import coroutine, get_logger, load_indexes, logger
 
 from models import Filmwork
 
@@ -122,7 +122,7 @@ class FilmworkEtl(BaseEtl):
 
 def main():
     settings = Settings()
-
+    load_indexes(es_dsn=settings.elastic_dsn)
     # Клиенты для хранилищ
     state_storage = State(JsonFileStorage(str(settings.local_storage_path)))
     pg_reader = PGReader(str(settings.postgres_dsn))
